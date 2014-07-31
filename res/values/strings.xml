@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">WifiConnecter</string>
+    <string name="current_ssid">Current SSID: %1$s</string>
+    <string name="hint_ssid">SSID</string>
+	<string name="hint_password">Password</string>
+	<string name="connect">Connect</string>
+</resources>
