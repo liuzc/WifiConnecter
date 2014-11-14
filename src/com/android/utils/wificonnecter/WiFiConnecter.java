@@ -73,13 +73,13 @@ public class WiFiConnecter {
 		this.mPassword = password;
 		
 		if (listener!=null) {
-			listener.onStart();
+			listener.onStarted(ssid);
 		}
 		
 		WifiInfo info = mWifiManager.getConnectionInfo();
 		if (info!=null && mSsid.equalsIgnoreCase(info.getSSID())) {
 			if (listener!=null) {
-				listener.onSuccess();
+				listener.onSuccess(info);
 				listener.onFinished();
 			}
 			return;
@@ -111,7 +111,7 @@ public class WiFiConnecter {
 			WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
 			if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null && mWifiInfo.getSSID().equalsIgnoreCase(mSsid)) {
 				if (mListener!=null) {
-					mListener.onSuccess();
+					mListener.onSuccess(mWifiInfo);
 					mListener.onFinished();
 				}
 				onPause();
@@ -175,11 +175,13 @@ public class WiFiConnecter {
 
 	public interface ActionListener {
 		
-		/** The operation started */
-		public void onStart();
+		/** The operation started
+         * @param ssid*/
+		public void onStarted(String ssid);
 		
-		/** The operation succeeded */
-		public void onSuccess();
+		/** The operation succeeded
+         * @param info*/
+		public void onSuccess(WifiInfo info);
 
 		/** The operation failed */
 		public void onFailure();
