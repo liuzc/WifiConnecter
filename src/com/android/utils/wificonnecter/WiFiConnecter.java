@@ -109,7 +109,8 @@ public class WiFiConnecter {
 		} else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
 			NetworkInfo mInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
 			WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
-			if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null && mWifiInfo.getSSID().equalsIgnoreCase(mSsid)) {
+			if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null
+                    && ("\""+mSsid+"\"").equalsIgnoreCase(mWifiInfo.getSSID())) {
 				if (mListener!=null) {
 					mListener.onSuccess(mWifiInfo);
 					mListener.onFinished();
