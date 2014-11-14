@@ -31,6 +31,7 @@ public class TestActivity extends Activity {
 
 		init();
 		
+		
 	}
 
 	private void init() {
