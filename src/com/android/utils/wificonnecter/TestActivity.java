@@ -30,7 +30,9 @@ public class TestActivity extends Activity {
 		setContentView(R.layout.activity_test);
 
 		init();
-		
+
+
+        
 		
 	}
 
