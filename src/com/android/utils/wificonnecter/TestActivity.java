@@ -7,7 +7,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,6 +41,8 @@ public class TestActivity extends Activity implements ActionListener {
         et_Ssid = (EditText) findViewById(R.id.et_ssid);
         et_Password = (EditText) findViewById(R.id.et_password);
 
+        et_Ssid.setText("chu");
+        et_Password.setText("cyy1234567");
         //Debug only
         //et_Ssid.setText("OTT_IPTV_3");
         //et_Password.setText("12345678");
@@ -81,7 +82,7 @@ public class TestActivity extends Activity implements ActionListener {
     }
 
     @Override
-    public void onFinished() {
+    public void onFinished(boolean isSuccessed) {
         System.out.println("------onFinished------");
         mDialog.dismiss();
         Toast.makeText(TestActivity.this, "onFinished", Toast.LENGTH_SHORT).show();

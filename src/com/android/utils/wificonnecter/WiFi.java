@@ -40,7 +40,7 @@ import android.net.wifi.WifiManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-class WiFi {
+public class WiFi {
 	
 	// Constants used for different security types
 	public static final String WPA2 = "WPA2";
@@ -73,7 +73,7 @@ class WiFi {
 			// Update failed.
 			return false;
 		}
-		
+        //确定
 		return connectToConfiguredNetwork(wifiMgr, config, true);
 	}
 	
@@ -85,6 +85,7 @@ class WiFi {
 	 * @return
 	 */
 	public static boolean connectToNewNetwork(final WifiManager wifiMgr, final ScanResult scanResult, final String password) {
+        //1.获取wifi加密方式（WEP, WPA, WPA2, WPA_EAP, IEEE8021X）
 		final String security = getScanResultSecurity(scanResult);
 		
 		if(security.equals(OPEN)) {
@@ -239,7 +240,8 @@ class WiFi {
 		return pri;
 	}
 
-	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final ScanResult hotsopt, String hotspotSecurity) {
+	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr,
+                                                         final ScanResult hotsopt, String hotspotSecurity) {
 		final String ssid = convertToQuotedString(hotsopt.SSID);
 		if(ssid.length() == 0) {
 			return null;
@@ -270,7 +272,8 @@ class WiFi {
 		return null;
 	}
 	
-	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final WifiConfiguration configToFind, String security) {
+	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr,
+                                                         final WifiConfiguration configToFind, String security) {
 		final String ssid = configToFind.SSID;
 		if(ssid.length() == 0) {
 			return null;
