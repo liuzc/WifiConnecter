@@ -39,6 +39,7 @@ public class WiFiConnecter {
 
     private boolean isRegistered;
     private boolean isActiveScan;
+    private boolean bySsidIgnoreCase;
 
     public WiFiConnecter(Context context) {
         this.mContext = context;
@@ -60,6 +61,7 @@ public class WiFiConnecter {
 
         context.registerReceiver(mReceiver, mFilter);
         isRegistered = true;
+        bySsidIgnoreCase = true;
         mScanner = new Scanner();
     }
 
@@ -81,7 +83,10 @@ public class WiFiConnecter {
         }
 
         WifiInfo info = mWifiManager.getConnectionInfo();
-        if (info != null && ("\"" + mSsid + "\"").equalsIgnoreCase(info.getSSID())) {
+        String quotedString = StringUtils.convertToQuotedString(mSsid);
+        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(info.getSSID())
+                : quotedString.equals(info.getSSID());
+        if (ssidEquals) {
             if (listener != null) {
                 listener.onSuccess(info);
                 listener.onFinished(true);
@@ -99,7 +104,11 @@ public class WiFiConnecter {
             List<ScanResult> results = mWifiManager.getScanResults();
             for (ScanResult result : results) {
                 //1.scan dest of ssid
-                if (mSsid.equalsIgnoreCase(result.SSID)) {
+                String quotedString = StringUtils.convertToQuotedString(mSsid);
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(result.SSID)
+                        : quotedString.equals(result.SSID);
+                if (ssidEquals) {
+                    //TODO ?
                     mScanner.pause();
                     //2.input error password
                     if (!WiFi.connectToNewNetwork(mWifiManager, result, mPassword)) {
@@ -117,13 +126,19 @@ public class WiFiConnecter {
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             NetworkInfo mInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
-            if (mInfo.isConnected() && mWifiInfo != null && mWifiInfo.getSSID() != null
-                    && ("\"" + mSsid + "\"").equalsIgnoreCase(mWifiInfo.getSSID())) {
-                if (mListener != null) {
-                    mListener.onSuccess(mWifiInfo);
-                    mListener.onFinished(true);
+            //ssid equals&&connected
+            if (mWifiInfo != null && mInfo.isConnected() && mWifiInfo.getSSID() != null) {
+                String quotedString = StringUtils.convertToQuotedString(mSsid);
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(mWifiInfo.getSSID())
+                        : quotedString.equals(mWifiInfo.getSSID());
+                if (ssidEquals) {
+                    if (mListener != null) {
+                        mListener.onSuccess(mWifiInfo);
+                        mListener.onFinished(true);
+                    }
+                    onPause();
                 }
-                onPause();
+
             }
         }
     }
@@ -168,8 +183,8 @@ public class WiFiConnecter {
         @Override
         public void handleMessage(Message message) {
             if (mRetry < MAX_TRY_COUNT) {
-                isActiveScan = true;
                 mRetry++;
+                isActiveScan = true;
                 //1.打开Wifi
                 if (!mWifiManager.isWifiEnabled()) {
                     mWifiManager.setWifiEnabled(true);
@@ -179,8 +194,11 @@ public class WiFiConnecter {
                 Log.d(TAG, "startScan:" + startScan);
                 //执行扫描失败（bind机制）
                 if (!startScan) {
-                    mListener.onFailure();
-                    mListener.onFinished(false);
+                    if (mListener != null) {
+                        mListener.onFailure();
+                        mListener.onFinished(false);
+                    }
+                    onPause();
                     return;
                 }
             } else {
@@ -190,6 +208,7 @@ public class WiFiConnecter {
                     mListener.onFailure();
                     mListener.onFinished(false);
                 }
+                onPause();
                 return;
             }
             sendEmptyMessageDelayed(0, WIFI_RESCAN_INTERVAL_MS);

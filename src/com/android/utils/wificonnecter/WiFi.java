@@ -94,7 +94,7 @@ public class WiFi {
 		}
 		
 		WifiConfiguration config = new WifiConfiguration();
-		config.SSID = convertToQuotedString(scanResult.SSID);
+		config.SSID = StringUtils.convertToQuotedString(scanResult.SSID);
 		config.BSSID = scanResult.BSSID;
 		setupSecurity(config, security, password);
 		
@@ -242,7 +242,7 @@ public class WiFi {
 
 	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr,
                                                          final ScanResult hotsopt, String hotspotSecurity) {
-		final String ssid = convertToQuotedString(hotsopt.SSID);
+		final String ssid = StringUtils.convertToQuotedString(hotsopt.SSID);
 		if(ssid.length() == 0) {
 			return null;
 		}
@@ -359,11 +359,11 @@ public class WiFi {
                     if (isHexWepKey(password)) {
                         config.wepKeys[0] = password;
                     } else {
-                        config.wepKeys[0] = convertToQuotedString(password);
+                        config.wepKeys[0] = StringUtils.convertToQuotedString(password);
                     }
                 } else {
                     config.wepKeys[0] = wepPasswordType == WEP_PASSWORD_ASCII
-                            ? convertToQuotedString(password)
+                            ? StringUtils.convertToQuotedString(password)
                             : password;
                 }
             }
@@ -396,7 +396,7 @@ public class WiFi {
                     config.preSharedKey = password;
                 } else {
                     // Goes quoted as ASCII
-                    config.preSharedKey = convertToQuotedString(password);
+                    config.preSharedKey = StringUtils.convertToQuotedString(password);
                 }
             }
             
@@ -411,7 +411,7 @@ public class WiFi {
                 config.allowedKeyManagement.set(KeyMgmt.IEEE8021X);
             }
             if (!TextUtils.isEmpty(password)) {
-                config.preSharedKey = convertToQuotedString(password);
+                config.preSharedKey = StringUtils.convertToQuotedString(password);
             }
         }
     }
@@ -437,21 +437,8 @@ public class WiFi {
         
         return true;
     }
-	
-	private static String convertToQuotedString(String string) {
-        if (TextUtils.isEmpty(string)) {
-            return "";
-        }
-        
-        final int lastPos = string.length() - 1;
-        if (lastPos < 0 || (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
-            return string;
-        }
-        
-        return "\"" + string + "\"";
-    }
-	
-	static final String[] SECURITY_MODES = { WEP, WPA, WPA2, WPA_EAP, IEEE8021X };
+
+    static final String[] SECURITY_MODES = { WEP, WPA, WPA2, WPA_EAP, IEEE8021X };
 	
 	/**
      * @return The security of a given {@link ScanResult}.
