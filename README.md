@@ -8,7 +8,7 @@ This library is very easy to use:
     	    WiFiConnecter mWiFiConnecter = new WiFiConnecter(mContext);
 		    mWiFiConnecter.connect("ssid", "password", new WiFiConnecter.ActionListener() {
 			@Override
-			public void onStart() {
+			public void onStarted() {
 			}
 
 			@Override
