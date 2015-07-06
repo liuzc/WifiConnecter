@@ -155,7 +155,7 @@ public class WiFiConnecter {
             };
         }
         if (mTimer != null && mTimerTask != null)
-            mTimer.schedule(mTimerTask, 8 * 1000, 1);
+            mTimer.schedule(mTimerTask, 12 * 1000, 1);
         Log.i(TAG, "start timmer ------> ");
     }
 
