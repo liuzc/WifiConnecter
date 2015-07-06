@@ -1,6 +1,9 @@
 package com.android.utils.wificonnecter;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -13,6 +16,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 public class WiFiConnecter {
@@ -28,7 +32,7 @@ public class WiFiConnecter {
     public static final int MAX_TRY_COUNT = 3;
 
     private Context mContext;
-    private WifiManager mWifiManager;
+    // private WifiManager mWifiManager;
 
     private final IntentFilter mFilter;
     private final BroadcastReceiver mReceiver;
@@ -40,10 +44,14 @@ public class WiFiConnecter {
     private boolean isRegistered;
     private boolean isActiveScan;
     private boolean bySsidIgnoreCase;
+    private TimerTask mTimerTask = null;
+    private boolean isWifiConnected = false;
+    private Timer mTimer = null;
 
     public WiFiConnecter(Context context) {
         this.mContext = context;
-        mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        // mWifiManager = (WifiManager)
+        // context.getSystemService(Context.WIFI_SERVICE);
 
         mFilter = new IntentFilter();
         mFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
@@ -65,13 +73,45 @@ public class WiFiConnecter {
         mScanner = new Scanner();
     }
 
+    public void openWifi() {
+        WiFiAdmin.getInstance(mContext).openWifi();
+    }
+
+    public List<ScanResult> getWifiList() {
+        List<ScanResult> wifiList = WiFiAdmin.getInstance(mContext).getScanResults();
+        List<ScanResult> newlist = new ArrayList<ScanResult>();
+        newlist.clear();
+        for (ScanResult result : wifiList) {
+            if (!TextUtils.isEmpty(result.SSID) && !containName(newlist, result.SSID))
+                newlist.add(result);
+        }
+        // return WiFiAdmin.getInstance(mContext).getWifiList();
+        return newlist;
+    }
+
+    public boolean containName(List<ScanResult> sr, String name) {
+        for (ScanResult result : sr) {
+            if (!TextUtils.isEmpty(result.SSID) && result.SSID.equals(name))
+                return true;
+        }
+        return false;
+    }
+
+    public String getConnectSsid() {
+        return WiFiAdmin.getInstance(mContext).getCurrentWifiNetName();
+    }
+
+    public boolean isWifiActive() {
+        return WiFiAdmin.getInstance(mContext).isWifiConnected();
+    }
 
     /**
      * Connect to a WiFi with the given ssid and password
      *
      * @param ssid
      * @param password
-     * @param listener : for callbacks on start or success or failure. Can be null.
+     * @param listener
+     *            : for callbacks on start or success or failure. Can be null.
      */
     public void connect(String ssid, String password, ActionListener listener) {
         this.mListener = listener;
@@ -82,10 +122,9 @@ public class WiFiConnecter {
             listener.onStarted(ssid);
         }
 
-        WifiInfo info = mWifiManager.getConnectionInfo();
+        WifiInfo info = WiFiAdmin.getInstance(mContext).getWifiInfo();
         String quotedString = StringUtils.convertToQuotedString(mSsid);
-        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(info.getSSID())
-                : quotedString.equals(info.getSSID());
+        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(info.getSSID()) : quotedString.equals(info.getSSID());
         if (ssidEquals) {
             if (listener != null) {
                 listener.onSuccess(info);
@@ -95,23 +134,63 @@ public class WiFiConnecter {
         }
 
         mScanner.forceScan();
+        // start timmer
+        stopTimer();
+        startTimer();
+    }
+
+    private void startTimer() {
+        if (mTimer == null) {
+            mTimer = new Timer();
+        }
+        if (mTimerTask == null) {
+            mTimerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    if (!isWifiConnected) { // wifi maybe connect failed
+                        mScanner.removeMessages(1);
+                        mScanner.sendEmptyMessage(1);
+                    }
+                }
+            };
+        }
+        if (mTimer != null && mTimerTask != null)
+            mTimer.schedule(mTimerTask, 8 * 1000, 1);
+        Log.i(TAG, "start timmer ------> ");
+    }
+
+    private void stopTimer() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+        if (mTimerTask != null) {
+            mTimerTask.cancel();
+            mTimerTask = null;
+        }
+        isWifiConnected = false;
+        Log.i(TAG, "stop timmer ------> ");
     }
 
     private void handleEvent(Context context, Intent intent) {
         String action = intent.getAction();
-        //An access point scan has completed, and results are available from the supplicant.
+        // An access point scan has completed, and results are available from
+        // the supplicant.
         if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action) && isActiveScan) {
-            List<ScanResult> results = mWifiManager.getScanResults();
+            Log.i(TAG, "receiver action --> android.net.wifi.SCAN_RESULTS");
+            List<ScanResult> results = getWifiList();
+            Log.i(TAG, "results.size() == " + (results == null ? 0 : results.size()));
             for (ScanResult result : results) {
-                //1.scan dest of ssid
+                Log.i(TAG, "ssid ---> " + result.SSID + " <-- bySsidIgnoreCase == " + bySsidIgnoreCase);
+                // 1.scan dest of ssid
                 String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(result.SSID)
-                        : quotedString.equals(result.SSID);
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase("\"" + result.SSID + "\"") : quotedString.equals(result.SSID);
+                Log.i(TAG, mSsid + " wifi isExist --> " + ssidEquals);
                 if (ssidEquals) {
-                    //TODO ?
                     mScanner.pause();
-                    //2.input error password
-                    if (!WiFi.connectToNewNetwork(mWifiManager, result, mPassword)) {
+                    // 2.input error password
+                    if (!WiFi.connectToNewNetwork(WiFiAdmin.getInstance(mContext).getWifiManager(), result, mPassword)) {
+                        Log.i(TAG, "connect failure");
                         if (mListener != null) {
                             mListener.onFailure();
                             mListener.onFinished(false);
@@ -122,25 +201,37 @@ public class WiFiConnecter {
                 }
             }
 
-            //Broadcast intent action indicating that the state of Wi-Fi connectivity has changed.
+            // Broadcast intent action indicating that the state of Wi-Fi
+            // connectivity has changed.
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
+            Log.i(TAG, "receiver action --> android.net.wifi.STATE_CHANGE");
             NetworkInfo mInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-            WifiInfo mWifiInfo = mWifiManager.getConnectionInfo();
-            //ssid equals&&connected
+            WifiInfo mWifiInfo = WiFiAdmin.getInstance(mContext).getWifiInfo();
+            // ssid equals&&connected
+            Log.i(TAG, " mInfo.getState() --> " + mInfo.getState());
             if (mWifiInfo != null && mInfo.isConnected() && mWifiInfo.getSSID() != null) {
+                Log.i(TAG, "connect Success!");
                 String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(mWifiInfo.getSSID())
-                        : quotedString.equals(mWifiInfo.getSSID());
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(mWifiInfo.getSSID()) : quotedString.equals(mWifiInfo.getSSID());
                 if (ssidEquals) {
+                    isWifiConnected = true;
+                    stopTimer(); // connect success stop timer
                     if (mListener != null) {
                         mListener.onSuccess(mWifiInfo);
                         mListener.onFinished(true);
                     }
                     onPause();
+                } else {
+                    // TODO connect other wifi ssid
                 }
-
+            } else {
+                Log.i(TAG, "mInfo.isConnected() --> " + mInfo.isConnected());
             }
         }
+    }
+
+    public boolean isScanResultOpen(ScanResult sr) {
+        return WiFi.OPEN.equals(WiFi.getScanResultSecurity(sr));
     }
 
     public void onPause() {
@@ -182,18 +273,25 @@ public class WiFiConnecter {
 
         @Override
         public void handleMessage(Message message) {
-            if (mRetry < MAX_TRY_COUNT) {
-                mRetry++;
-                isActiveScan = true;
-                //1.打开Wifi
-                if (!mWifiManager.isWifiEnabled()) {
-                    mWifiManager.setWifiEnabled(true);
-                }
-                //TODO startScan什么时候返回false
-                boolean startScan = mWifiManager.startScan();
-                Log.d(TAG, "startScan:" + startScan);
-                //执行扫描失败（bind机制）
-                if (!startScan) {
+            switch (message.what) {
+            case 0:
+                if (mRetry < MAX_TRY_COUNT) {
+                    mRetry++;
+                    isActiveScan = true;
+                    openWifi();
+                    boolean startScan = WiFiAdmin.getInstance(mContext).startScan();
+                    Log.d(TAG, "startScan:" + startScan);
+                    if (!startScan) {
+                        if (mListener != null) {
+                            mListener.onFailure();
+                            mListener.onFinished(false);
+                        }
+                        onPause();
+                        return;
+                    }
+                } else {
+                    mRetry = 0;
+                    isActiveScan = false;
                     if (mListener != null) {
                         mListener.onFailure();
                         mListener.onFinished(false);
@@ -201,17 +299,18 @@ public class WiFiConnecter {
                     onPause();
                     return;
                 }
-            } else {
-                mRetry = 0;
-                isActiveScan = false;
+                sendEmptyMessageDelayed(0, WIFI_RESCAN_INTERVAL_MS);
+                break;
+
+            case 1:
+                stopTimer();
                 if (mListener != null) {
                     mListener.onFailure();
                     mListener.onFinished(false);
                 }
                 onPause();
-                return;
+                break;
             }
-            sendEmptyMessageDelayed(0, WIFI_RESCAN_INTERVAL_MS);
         }
     }
 
