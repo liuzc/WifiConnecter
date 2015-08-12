@@ -124,7 +124,7 @@ public class WiFiConnecter {
 
         WifiInfo info = WiFiAdmin.getInstance(mContext).getWifiInfo();
         String quotedString = StringUtils.convertToQuotedString(mSsid);
-        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(info.getSSID()) : quotedString.equals(info.getSSID());
+        boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(StringUtils.convertToQuotedString(info.getSSID())) : quotedString.equals(StringUtils.convertToQuotedString(info.getSSID()));
         if (ssidEquals) {
             if (listener != null) {
                 listener.onSuccess(info);
@@ -184,7 +184,7 @@ public class WiFiConnecter {
                 Log.i(TAG, "ssid ---> " + result.SSID + " <-- bySsidIgnoreCase == " + bySsidIgnoreCase);
                 // 1.scan dest of ssid
                 String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase("\"" + result.SSID + "\"") : quotedString.equals(result.SSID);
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(StringUtils.convertToQuotedString(result.SSID)) : quotedString.equals(StringUtils.convertToQuotedString(result.SSID));
                 Log.i(TAG, mSsid + " wifi isExist --> " + ssidEquals);
                 if (ssidEquals) {
                     mScanner.pause();
@@ -212,7 +212,7 @@ public class WiFiConnecter {
             if (mWifiInfo != null && mInfo.isConnected() && mWifiInfo.getSSID() != null) {
                 Log.i(TAG, "connect Success!");
                 String quotedString = StringUtils.convertToQuotedString(mSsid);
-                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(mWifiInfo.getSSID()) : quotedString.equals(mWifiInfo.getSSID());
+                boolean ssidEquals = bySsidIgnoreCase ? quotedString.equalsIgnoreCase(StringUtils.convertToQuotedString(mWifiInfo.getSSID())) : quotedString.equals(StringUtils.convertToQuotedString(mWifiInfo.getSSID()));
                 if (ssidEquals) {
                     isWifiConnected = true;
                     stopTimer(); // connect success stop timer
