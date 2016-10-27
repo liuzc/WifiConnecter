@@ -1,3 +1,5 @@
+##THIS LIBRARY IS DEPRECATED. IT IS NO LONGER SUPPORTED!
+
 WifiConnecter
 =============
 
